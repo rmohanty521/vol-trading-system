@@ -1,0 +1,8 @@
+pandas
+numpy
+pyarrow
+yfinance
+scikit-learn
+matplotlib
+tabulate
+pytest

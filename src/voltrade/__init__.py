@@ -1,0 +1,1 @@
+"""Volatility-aware trading system."""
