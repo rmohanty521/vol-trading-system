@@ -1,0 +1,44 @@
+name: paper-trading bot
+
+on:
+  schedule:
+    # 15:30 New York in both EDT (19:30 UTC) and EST (20:30 UTC), Mon-Fri.
+    # scripts/ci_run.py skips whichever run lands outside 15:xx New York.
+    - cron: "30 19 * * 1-5"
+    - cron: "30 20 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "what to run"
+        type: choice
+        options: [rebalance, pnl]
+        default: pnl
+
+concurrency:
+  group: bot
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      DD_SITE: ${{ secrets.DD_SITE }}
+      VOLTRADE_ENV: prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt && pip install -e .
+      - name: run bot
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python scripts/ci_run.py --force-${{ inputs.mode }}
+          else
+            python scripts/ci_run.py
+          fi

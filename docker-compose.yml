@@ -1,0 +1,27 @@
+# Bot + Datadog agent. Secrets come from a .env file next to this one
+# (never committed): ALPACA_API_KEY, ALPACA_SECRET_KEY, DD_API_KEY, DD_SITE.
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DD_AGENT_HOST: datadog-agent
+      VOLTRADE_ENV: prod
+    volumes:
+      - ./data:/app/data # price cache survives restarts
+    depends_on:
+      - datadog-agent
+
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:7
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DD_DOGSTATSD_NON_LOCAL_TRAFFIC: "true"
+      DD_LOGS_ENABLED: "true"
+      DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro

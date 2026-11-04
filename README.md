@@ -78,5 +78,43 @@ What this shows:
   was still elevated. This is one bull-market window; it isn't evidence that equal weight
   dominates in general, and it's reported as-is rather than tuned away.
 
+## Paper trading
+
+`scripts/run_bot.py` retrains the model on all history, forecasts each stock's vol for the
+next 20 days, sizes the book to the 10% target, and trades the difference from current
+positions (sells first, trades under $25 skipped). Alpaca is hard-coded to **paper** mode;
+there is no live-money path.
+
+```
+python scripts/run_bot.py            # dry run: prints orders, trades nothing
+python scripts/run_bot.py --paper    # sends orders to your Alpaca paper account
+```
+
+## Deploy + monitoring
+
+The bot runs on **GitHub Actions** (`.github/workflows/bot.yml`) at 15:30 New York time
+every weekday: it reports equity and P&L daily and rebalances on Fridays. GitHub cron is
+UTC-only, so the workflow fires at both 19:30 and 20:30 UTC and `scripts/ci_run.py` runs
+only the one that lands at 15:xx New York, which handles daylight saving.
+
+Setup: in the repo, go to Settings → Secrets and variables → Actions and add
+`ALPACA_API_KEY`, `ALPACA_SECRET_KEY`, `DD_API_KEY` and `DD_SITE`. To run it by hand,
+use Actions → paper-trading bot → Run workflow.
+
+Datadog metrics (prefix `voltrade.`): `order.latency_ms.median/.avg/.max` (submit to
+broker ack), `order.submitted` / `order.filled` and `rebalance.fill_rate`,
+`portfolio.equity`, `portfolio.pnl_daily`, `portfolio.gross_target`, and per-ticker
+`forecast.vol`. Failures post a Datadog error event. On Actions, metrics go straight to
+Datadog's HTTP API; with no Datadog settings they print to stdout.
+
+**Alternative: a VM.** `docker-compose.yml` runs the bot plus a Datadog agent on any
+Linux VM (`scripts/setup_vm.sh` prepares a fresh Ubuntu box), with
+`scripts/scheduler.py` keeping the same schedule:
+
+```
+cp .env.example .env    # add Alpaca paper keys + Datadog API key
+docker compose up -d --build
+```
+
 Caveats: the universe is 50 stocks that are large *today* (survivorship bias), costs are a
 flat 5 bp, and there is only ~4 years of out-of-sample data.

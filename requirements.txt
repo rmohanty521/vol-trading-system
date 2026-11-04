@@ -6,3 +6,6 @@ scikit-learn
 matplotlib
 tabulate
 pytest
+alpaca-py
+datadog
+tzdata
