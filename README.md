@@ -118,3 +118,13 @@ docker compose up -d --build
 
 Caveats: the universe is 50 stocks that are large *today* (survivorship bias), costs are a
 flat 5 bp, and there is only ~4 years of out-of-sample data.
+
+## Paper account, first three weeks
+
+![Alpaca paper account equity and daily P&L, Nov 3 to Nov 21, 2026](docs/paper_pnl.png)
+
+Flat at the starting $100,000 with zero P&L: the bot placed no trades in this period.
+GitHub started the scheduled runs 3 to 9 hours late, and `scripts/ci_run.py` skipped
+any run that didn't start at 15:xx New York, so every scheduled run, Friday rebalances
+included, exited without trading or reporting. It now checks the time the run was
+scheduled for instead. Regenerate the chart with `python scripts/plot_pnl.py`.
