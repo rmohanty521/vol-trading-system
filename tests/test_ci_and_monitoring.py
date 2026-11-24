@@ -28,6 +28,30 @@ def test_decide(when, expected):
     assert decide(now, []) == expected
 
 
+UTC = ZoneInfo("UTC")
+EDT_CRON, EST_CRON = "30 19 * * 1-5", "30 20 * * 1-5"
+
+
+@pytest.mark.parametrize(
+    "started_utc, schedule, expected",
+    [
+        # real late starts from November (EST): GitHub ran them 4-8 hours late
+        ("2026-11-21 01:38", EST_CRON, ["--paper"]),  # Friday's 15:30 run, started 20:38 NY
+        ("2026-11-21 00:53", EDT_CRON, None),  # Friday's 14:30 run: the wrong cron in winter
+        ("2026-11-24 04:54", EST_CRON, ["--paper", "--pnl"]),  # Monday, started 23:54 NY
+        ("2026-11-24 04:21", EDT_CRON, None),
+        # summer (EDT): the other cron is the real one
+        ("2026-07-15 22:10", EDT_CRON, ["--paper", "--pnl"]),
+        ("2026-07-15 23:05", EST_CRON, None),
+        # on time still works
+        ("2026-11-20 20:31", EST_CRON, ["--paper"]),
+    ],
+)
+def test_decide_uses_scheduled_time_not_start_time(started_utc, schedule, expected):
+    now = datetime.fromisoformat(started_utc).replace(tzinfo=UTC).astimezone(NY)
+    assert decide(now, [], schedule) == expected
+
+
 def test_force_flags_override_window():
     sunday = datetime(2026, 11, 8, 3, 0, tzinfo=NY)
     assert decide(sunday, ["--force-rebalance"]) == ["--paper"]

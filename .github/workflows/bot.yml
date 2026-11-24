@@ -28,6 +28,10 @@ jobs:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
       DD_SITE: ${{ secrets.DD_SITE }}
       VOLTRADE_ENV: prod
+      # the cron line that triggered this run (empty for manual runs); GitHub
+      # can start scheduled runs hours late, so ci_run.py checks this instead
+      # of the clock
+      SCHEDULE: ${{ github.event.schedule }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
